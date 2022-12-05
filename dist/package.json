@@ -1,8 +1,8 @@
 {
-  "name": "nest-keycloak-connect",
-  "version": "2.0.0",
-  "description": "keycloak-nodejs-connect module for Nest",
-  "author": "John Joshua Ferrer <johnjoshuaferrer@disroot.org>",
+  "name": "nest-keycloak-connect-fork",
+  "version": "0.0.1",
+  "description": "keycloak-nodejs-connect module for Nest with multiple Clients",
+  "author": "Tien <tien@zodinet.com>",
   "license": "MIT",
   "scripts": {
     "start:dev": "tsc -w",
@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ferrerojosh/nest-keycloak-connect"
+    "url": "https://github.com/zodinet-subscription/nest-keycloak-connect"
   },
   "bugs": "https://github.com/ferrerojosh/nest-keycloak-connect/issues",
   "peerDependencies": {
