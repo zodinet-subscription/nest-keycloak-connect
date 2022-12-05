@@ -1,6 +1,6 @@
 {
   "name": "nest-keycloak-connect-fork",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "keycloak-nodejs-connect module for Nest with multiple Clients",
   "author": "Tien <tien@zodinet.com>",
   "license": "MIT",
