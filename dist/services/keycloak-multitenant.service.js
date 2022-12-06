@@ -56,23 +56,23 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
                 this.keycloakOpts.multiTenant === undefined) {
                 throw new Error('Multi tenant is not defined yet multi tenant service is being called.');
             }
-            if (this.instances.has(realm)) {
+            const clientId = yield this.resolveClientId();
+            const instanceKey = `${realm}_${clientId}`;
+            if (this.instances.has(instanceKey)) {
                 if (this.keycloakOpts.multiTenant.resolveAlways) {
-                    const keycloak = this.instances.get(realm);
+                    const keycloak = this.instances.get(instanceKey);
                     const secret = this.resolveSecret(realm);
-                    const clientId = this.resolveClientId();
                     keycloak.config.secret = secret;
                     keycloak.config.clientId = clientId;
                     keycloak.grantManager.secret = secret;
                     // Save instance
-                    this.instances.set(realm, keycloak);
+                    this.instances.set(instanceKey, keycloak);
                     return keycloak;
                 }
-                return this.instances.get(realm);
+                return this.instances.get(instanceKey);
             }
             else {
                 const secret = yield this.resolveSecret(realm);
-                const clientId = this.resolveClientId();
                 // TODO: Repeating code from  provider, will need to rework this in 2.0
                 // Override realm and secret
                 const keycloakOpts = Object.assign(this.keycloakOpts, {
@@ -86,7 +86,7 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
                     req.resourceDenied = true;
                     next();
                 };
-                this.instances.set(realm, keycloak);
+                this.instances.set(instanceKey, keycloak);
                 return keycloak;
             }
         });
