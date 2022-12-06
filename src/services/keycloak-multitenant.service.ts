@@ -13,7 +13,7 @@ export class KeycloakMultiTenantService {
   constructor(
     @Inject(KEYCLOAK_CONNECT_OPTIONS)
     private keycloakOpts: KeycloakConnectOptions,
-  ) {}
+  ) { }
 
   /**
    * Clears the cached Keycloak instances.
@@ -46,8 +46,10 @@ export class KeycloakMultiTenantService {
       if (this.keycloakOpts.multiTenant.resolveAlways) {
         const keycloak: any = this.instances.get(realm);
         const secret = this.resolveSecret(realm);
+        const clientId = this.resolveClientId();
 
         keycloak.config.secret = secret;
+        keycloak.config.clientId = clientId;
         keycloak.grantManager.secret = secret;
 
         // Save instance
@@ -58,11 +60,14 @@ export class KeycloakMultiTenantService {
       return this.instances.get(realm);
     } else {
       const secret = await this.resolveSecret(realm);
+      const clientId = this.resolveClientId();
+
       // TODO: Repeating code from  provider, will need to rework this in 2.0
       // Override realm and secret
       const keycloakOpts: any = Object.assign(this.keycloakOpts, {
         realm,
         secret,
+        clientId
       });
       const keycloak: any = new KeycloakConnect({}, keycloakOpts);
 
@@ -104,5 +109,32 @@ export class KeycloakMultiTenantService {
     // Override secret
     // Order of priority: resolved realm secret > default global secret
     return realmSecret || this.keycloakOpts.secret;
+  }
+
+  async resolveClientId(): Promise<string> {
+    if (typeof this.keycloakOpts === 'string') {
+      throw new Error(
+        'Keycloak configuration is a configuration path. This should not happen after module load.',
+      );
+    }
+    if (
+      this.keycloakOpts.multiTenant === null ||
+      this.keycloakOpts.multiTenant === undefined
+    ) {
+      throw new Error(
+        'Multi tenant is not defined yet multi tenant service is being called.',
+      );
+    }
+
+    // Resolve clientId
+    const clientIdResolver = this.keycloakOpts.multiTenant.clientIdResolver();
+    const clientIdResult =
+      clientIdResolver || clientIdResolver instanceof Promise
+        ? await clientIdResolver
+        : clientIdResolver;
+
+    // Override secret
+    // Order of priority: resolved clientId > default global secret
+    return clientIdResult || this.keycloakOpts.clientId;
   }
 }
