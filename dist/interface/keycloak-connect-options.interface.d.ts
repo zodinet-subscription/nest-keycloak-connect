@@ -10,6 +10,10 @@ export interface MultiTenantOptions {
      */
     resolveAlways?: boolean;
     /**
+     * The clientId resolver function.
+     */
+    clientIdResolver: () => Promise<string> | string;
+    /**
      * The realm resolver function.
      */
     realmResolver: (request: any) => Promise<string> | string;

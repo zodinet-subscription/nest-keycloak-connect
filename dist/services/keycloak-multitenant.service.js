@@ -60,7 +60,9 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
                 if (this.keycloakOpts.multiTenant.resolveAlways) {
                     const keycloak = this.instances.get(realm);
                     const secret = this.resolveSecret(realm);
+                    const clientId = this.resolveClientId();
                     keycloak.config.secret = secret;
+                    keycloak.config.clientId = clientId;
                     keycloak.grantManager.secret = secret;
                     // Save instance
                     this.instances.set(realm, keycloak);
@@ -70,11 +72,13 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
             }
             else {
                 const secret = yield this.resolveSecret(realm);
+                const clientId = this.resolveClientId();
                 // TODO: Repeating code from  provider, will need to rework this in 2.0
                 // Override realm and secret
                 const keycloakOpts = Object.assign(this.keycloakOpts, {
                     realm,
                     secret,
+                    clientId
                 });
                 const keycloak = new keycloak_connect_1.default({}, keycloakOpts);
                 // The most important part
@@ -104,6 +108,25 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
             // Override secret
             // Order of priority: resolved realm secret > default global secret
             return realmSecret || this.keycloakOpts.secret;
+        });
+    }
+    resolveClientId() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (typeof this.keycloakOpts === 'string') {
+                throw new Error('Keycloak configuration is a configuration path. This should not happen after module load.');
+            }
+            if (this.keycloakOpts.multiTenant === null ||
+                this.keycloakOpts.multiTenant === undefined) {
+                throw new Error('Multi tenant is not defined yet multi tenant service is being called.');
+            }
+            // Resolve clientId
+            const clientIdResolver = this.keycloakOpts.multiTenant.clientIdResolver();
+            const clientIdResult = clientIdResolver || clientIdResolver instanceof Promise
+                ? yield clientIdResolver
+                : clientIdResolver;
+            // Override secret
+            // Order of priority: resolved clientId > default global secret
+            return clientIdResult || this.keycloakOpts.clientId;
         });
     }
 };

@@ -18,4 +18,5 @@ export declare class KeycloakMultiTenantService {
      */
     get(realm: string): Promise<KeycloakConnect.Keycloak>;
     resolveSecret(realm: string): Promise<string>;
+    resolveClientId(): Promise<string>;
 }
