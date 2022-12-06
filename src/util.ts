@@ -14,15 +14,20 @@ export const useKeycloak = async (
   multiTenant: KeycloakMultiTenantService,
   opts: KeycloakConnectConfig,
 ): Promise<KeycloakConnect.Keycloak> => {
-  if (opts.multiTenant && opts.multiTenant.realmResolver) {
-    const resolvedRealm = opts.multiTenant.realmResolver(request);
-    const realm =
-      resolvedRealm instanceof Promise ? await resolvedRealm : resolvedRealm;
-    return await multiTenant.get(realm);
-  } else if (!opts.realm) {
-    const payload = parseToken(jwt);
-    const issuerRealm = payload.iss.split('/').pop();
-    return await multiTenant.get(issuerRealm);
+  if (opts.multiTenant && opts.multiTenant.tenantResolver) {
+    const tenant = await opts.multiTenant.tenantResolver(request);
+    return await multiTenant.getByTenant(tenant);
+  } else {
+    if (opts.multiTenant && opts.multiTenant.realmResolver) {
+      const resolvedRealm = opts.multiTenant.realmResolver(request);
+      const realm =
+        resolvedRealm instanceof Promise ? await resolvedRealm : resolvedRealm;
+      return await multiTenant.get(realm);
+    } else if (!opts.realm) {
+      const payload = parseToken(jwt);
+      const issuerRealm = payload.iss.split('/').pop();
+      return await multiTenant.get(issuerRealm);
+    }
   }
   return singleTenant;
 };

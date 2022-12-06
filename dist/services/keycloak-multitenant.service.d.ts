@@ -1,5 +1,5 @@
 import KeycloakConnect from 'keycloak-connect';
-import { KeycloakConnectOptions } from '../interface/keycloak-connect-options.interface';
+import { KeycloakConnectConfig, KeycloakConnectOptions } from '../interface/keycloak-connect-options.interface';
 /**
  * Stores all keycloak instances when multi tenant option is defined.
  */
@@ -16,7 +16,12 @@ export declare class KeycloakMultiTenantService {
      * @param realm the realm to retrieve from
      * @returns the multi tenant keycloak instance
      */
+    getByTenant(tenant: KeycloakConnectConfig): Promise<KeycloakConnect.Keycloak>;
+    /**
+     * Retrieves a keycloak instance based on the realm provided.
+     * @param realm the realm to retrieve from
+     * @returns the multi tenant keycloak instance
+     */
     get(realm: string): Promise<KeycloakConnect.Keycloak>;
     resolveSecret(realm: string): Promise<string>;
-    resolveClientId(): Promise<string>;
 }

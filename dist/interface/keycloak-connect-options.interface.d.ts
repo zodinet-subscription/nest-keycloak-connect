@@ -10,17 +10,17 @@ export interface MultiTenantOptions {
      */
     resolveAlways?: boolean;
     /**
-     * The clientId resolver function.
-     */
-    clientIdResolver: () => Promise<string> | string;
-    /**
      * The realm resolver function.
      */
-    realmResolver: (request: any) => Promise<string> | string;
+    realmResolver?: (request: any) => Promise<string> | string;
     /**
      * The realm secret resolver function.
      */
     realmSecretResolver?: (realm: string) => Promise<string> | string;
+    /**
+     * The realm resolver function.
+     */
+    tenantResolver?: (request: any) => Promise<KeycloakConnectConfig>;
 }
 /**
  * Library only configuration.

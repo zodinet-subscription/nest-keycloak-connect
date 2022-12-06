@@ -47,6 +47,50 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
      * @param realm the realm to retrieve from
      * @returns the multi tenant keycloak instance
      */
+    getByTenant(tenant) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (typeof this.keycloakOpts === 'string') {
+                throw new Error('Keycloak configuration is a configuration path. This should not happen after module load.');
+            }
+            if (this.keycloakOpts.multiTenant === null ||
+                this.keycloakOpts.multiTenant === undefined) {
+                throw new Error('Multi tenant is not defined yet multi tenant service is being called.');
+            }
+            const instanceKey = `${tenant.realm}_${tenant.clientId}`;
+            if (this.instances.has(instanceKey)) {
+                if (this.keycloakOpts.multiTenant.resolveAlways) {
+                    const keycloak = this.instances.get(instanceKey);
+                    keycloak.config.secret = tenant.secret;
+                    keycloak.grantManager.secret = tenant.secret;
+                    // Save instance
+                    this.instances.set(instanceKey, keycloak);
+                    return keycloak;
+                }
+                return this.instances.get(instanceKey);
+            }
+            else {
+                // Override realm and secret
+                const keycloakOpts = Object.assign(this.keycloakOpts, {
+                    realm: tenant.realm,
+                    secret: tenant.secret,
+                    clientId: tenant.clientId
+                });
+                const keycloak = new keycloak_connect_1.default({}, keycloakOpts);
+                // The most important part
+                keycloak.accessDenied = (req, res, next) => {
+                    req.resourceDenied = true;
+                    next();
+                };
+                this.instances.set(instanceKey, keycloak);
+                return keycloak;
+            }
+        });
+    }
+    /**
+     * Retrieves a keycloak instance based on the realm provided.
+     * @param realm the realm to retrieve from
+     * @returns the multi tenant keycloak instance
+     */
     get(realm) {
         return __awaiter(this, void 0, void 0, function* () {
             if (typeof this.keycloakOpts === 'string') {
@@ -56,20 +100,17 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
                 this.keycloakOpts.multiTenant === undefined) {
                 throw new Error('Multi tenant is not defined yet multi tenant service is being called.');
             }
-            const clientId = yield this.resolveClientId();
-            const instanceKey = `${realm}_${clientId}`;
-            if (this.instances.has(instanceKey)) {
+            if (this.instances.has(realm)) {
                 if (this.keycloakOpts.multiTenant.resolveAlways) {
-                    const keycloak = this.instances.get(instanceKey);
+                    const keycloak = this.instances.get(realm);
                     const secret = this.resolveSecret(realm);
                     keycloak.config.secret = secret;
-                    keycloak.config.clientId = clientId;
                     keycloak.grantManager.secret = secret;
                     // Save instance
-                    this.instances.set(instanceKey, keycloak);
+                    this.instances.set(realm, keycloak);
                     return keycloak;
                 }
-                return this.instances.get(instanceKey);
+                return this.instances.get(realm);
             }
             else {
                 const secret = yield this.resolveSecret(realm);
@@ -77,8 +118,7 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
                 // Override realm and secret
                 const keycloakOpts = Object.assign(this.keycloakOpts, {
                     realm,
-                    secret,
-                    clientId
+                    secret
                 });
                 const keycloak = new keycloak_connect_1.default({}, keycloakOpts);
                 // The most important part
@@ -86,7 +126,7 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
                     req.resourceDenied = true;
                     next();
                 };
-                this.instances.set(instanceKey, keycloak);
+                this.instances.set(realm, keycloak);
                 return keycloak;
             }
         });
@@ -108,25 +148,6 @@ let KeycloakMultiTenantService = class KeycloakMultiTenantService {
             // Override secret
             // Order of priority: resolved realm secret > default global secret
             return realmSecret || this.keycloakOpts.secret;
-        });
-    }
-    resolveClientId() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (typeof this.keycloakOpts === 'string') {
-                throw new Error('Keycloak configuration is a configuration path. This should not happen after module load.');
-            }
-            if (this.keycloakOpts.multiTenant === null ||
-                this.keycloakOpts.multiTenant === undefined) {
-                throw new Error('Multi tenant is not defined yet multi tenant service is being called.');
-            }
-            // Resolve clientId
-            const clientIdResolver = this.keycloakOpts.multiTenant.clientIdResolver();
-            const clientIdResult = clientIdResolver || clientIdResolver instanceof Promise
-                ? yield clientIdResolver
-                : clientIdResolver;
-            // Override secret
-            // Order of priority: resolved clientId > default global secret
-            return clientIdResult || this.keycloakOpts.clientId;
         });
     }
 };

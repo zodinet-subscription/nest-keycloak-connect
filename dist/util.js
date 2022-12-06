@@ -13,15 +13,21 @@ exports.parseToken = exports.extractRequest = exports.useKeycloak = void 0;
 // Confusing and all, but I needed to extract this fn to avoid more repeating code
 // TODO: Rework in 2.0
 const useKeycloak = (request, jwt, singleTenant, multiTenant, opts) => __awaiter(void 0, void 0, void 0, function* () {
-    if (opts.multiTenant && opts.multiTenant.realmResolver) {
-        const resolvedRealm = opts.multiTenant.realmResolver(request);
-        const realm = resolvedRealm instanceof Promise ? yield resolvedRealm : resolvedRealm;
-        return yield multiTenant.get(realm);
+    if (opts.multiTenant && opts.multiTenant.tenantResolver) {
+        const tenant = yield opts.multiTenant.tenantResolver(request);
+        return yield multiTenant.getByTenant(tenant);
     }
-    else if (!opts.realm) {
-        const payload = (0, exports.parseToken)(jwt);
-        const issuerRealm = payload.iss.split('/').pop();
-        return yield multiTenant.get(issuerRealm);
+    else {
+        if (opts.multiTenant && opts.multiTenant.realmResolver) {
+            const resolvedRealm = opts.multiTenant.realmResolver(request);
+            const realm = resolvedRealm instanceof Promise ? yield resolvedRealm : resolvedRealm;
+            return yield multiTenant.get(realm);
+        }
+        else if (!opts.realm) {
+            const payload = (0, exports.parseToken)(jwt);
+            const issuerRealm = payload.iss.split('/').pop();
+            return yield multiTenant.get(issuerRealm);
+        }
     }
     return singleTenant;
 });
